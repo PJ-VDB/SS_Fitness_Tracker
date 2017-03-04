@@ -3,4 +3,5 @@
     <string name="add_workout_a">Add Workout A</string>
     <string name="add_workout_b">Add Workout B</string>
     <string name="add_squat">Add Squat</string>
+    <string name="button_undo">Undo</string>
 </resources>

@@ -25,10 +25,10 @@ SelectExerciseByNameFromLog:
 SELECT * FROM exercise_log WHERE exercise_name = ?;
 
 DeleteWorkoutByDate:
-DELETE FROM workout_db WHERE date = ?;
+DELETE FROM exercise_log WHERE date = ?;
 
 DeleteWorkoutById:
-DELETE FROM workout_db WHERE id = ?;
+DELETE FROM exercise_log WHERE id = ?;
 
 UpdateWorkoutWeightById:
 UPDATE exercise_log

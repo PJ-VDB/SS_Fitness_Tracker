@@ -18,6 +18,21 @@ public abstract class ExerciseLog implements exercise_logModel {
         }
     };
 
+//    static Builder builder(){
+//        return new AutoValue_ExerciseLog.Builder();
+//    }
+//
+//    @AutoValue.Builder
+//    abstract static class Builder {
+//        abstract Builder setExercise_ame(String value);
+//        abstract Builder setDate(String value);
+//        abstract Builder setWeight(Double value);
+//        abstract Builder setNote(String value);
+//        abstract Builder setSucceeded(Long value);
+//        abstract ExerciseLog build();
+//    }
+
+
     public static final exercise_logModel.Factory<ExerciseLog> FACTORY = new exercise_logModel.Factory<>(CREATOR);
     public static final exercise_logModel.Mapper<ExerciseLog> MAPPER = new exercise_logModel.Mapper<>(FACTORY);
 

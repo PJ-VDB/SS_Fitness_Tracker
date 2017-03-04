@@ -264,14 +264,14 @@ public interface exercise_logModel {
             List<String> args = new ArrayList<String>();
             int currentIndex = 1;
             StringBuilder query = new StringBuilder();
-            query.append("DELETE FROM workout_db WHERE date = ");
+            query.append("DELETE FROM exercise_log WHERE date = ");
             if (date == null) {
                 query.append("null");
             } else {
                 query.append('?').append(currentIndex++);
                 args.add(date);
             }
-            return new SqlDelightStatement(query.toString(), args.toArray(new String[args.size()]), Collections.<String>singleton("workout_db"));
+            return new SqlDelightStatement(query.toString(), args.toArray(new String[args.size()]), Collections.<String>singleton("exercise_log"));
         }
 
         /**
@@ -282,9 +282,9 @@ public interface exercise_logModel {
             List<String> args = new ArrayList<String>();
             int currentIndex = 1;
             StringBuilder query = new StringBuilder();
-            query.append("DELETE FROM workout_db WHERE id = ");
+            query.append("DELETE FROM exercise_log WHERE id = ");
             query.append(id);
-            return new SqlDelightStatement(query.toString(), args.toArray(new String[args.size()]), Collections.<String>singleton("workout_db"));
+            return new SqlDelightStatement(query.toString(), args.toArray(new String[args.size()]), Collections.<String>singleton("exercise_log"));
         }
 
         /**
@@ -391,8 +391,8 @@ public interface exercise_logModel {
 
     final class DeleteWorkoutByDate extends SqlDelightCompiledStatement.Delete {
         public DeleteWorkoutByDate(SQLiteDatabase database) {
-            super("workout_db", database.compileStatement(""
-                    + "DELETE FROM workout_db WHERE date = ?"));
+            super("exercise_log", database.compileStatement(""
+                    + "DELETE FROM exercise_log WHERE date = ?"));
         }
 
         public void bind(@Nullable String date) {
@@ -406,8 +406,8 @@ public interface exercise_logModel {
 
     final class DeleteWorkoutById extends SqlDelightCompiledStatement.Delete {
         public DeleteWorkoutById(SQLiteDatabase database) {
-            super("workout_db", database.compileStatement(""
-                    + "DELETE FROM workout_db WHERE id = ?"));
+            super("exercise_log", database.compileStatement(""
+                    + "DELETE FROM exercise_log WHERE id = ?"));
         }
 
         public void bind(long id) {
