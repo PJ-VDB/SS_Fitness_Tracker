@@ -16,6 +16,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
@@ -466,9 +468,8 @@ public class MainActivity extends AppCompatActivity {
 
         private String inputWeight;
 
-        private View.OnFocusChangeListener mOnFocusChangeListener;
-
         private ExerciseLog mExerciseLog;
+        private TextWatcher mTextWatcher;
 
         public ExerciseLogHolder(View itemView){
             super(itemView);
@@ -483,21 +484,31 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
-        public void bindExercise(com.example.pieter_jan.SS_fitness_tracker.data.model.ExerciseLog exerciseLog, View.OnFocusChangeListener onFocusChangeListener){
-
-            mOnFocusChangeListener = onFocusChangeListener;
+        public void bindExercise(com.example.pieter_jan.SS_fitness_tracker.data.model.ExerciseLog exerciseLog){
 
             mExerciseLog = exerciseLog;
 
-            mExerciseNameTV.setText(mExerciseLog.exercise_name());
-//            mPreviousExerciseWeightTV.setText(mExerciseLog.date());
-
-            if(exerciseLog.weight() != null){ //check if there already is a weight in the table
-                mPreviousExerciseWeightTV.setText(mExerciseLog.weight().toString());
-                mCurrentExerciseWeightTV.setText(mExerciseLog.weight().toString());
-            } else {
-                // keep null in the field
+            if(mExerciseLog.weight() != null) {
+                inputWeight = mExerciseLog.weight().toString();
+            } else{
+                inputWeight = null;
             }
+
+            mExerciseNameTV.setText(mExerciseLog.exercise_name());
+
+            if(inputWeight != null){
+                mPreviousExerciseWeightTV.setText(inputWeight);
+                mCurrentExerciseWeightTV.setText(inputWeight);
+            } else{
+                mCurrentExerciseWeightTV.setText("");
+            }
+
+//            if(exerciseLog.weight() != null ){ //check if there already is a weight in the table
+//                mPreviousExerciseWeightTV.setText(mExerciseLog.weight().toString());
+//                mCurrentExerciseWeightTV.setText(mExerciseLog.weight().toString());
+//            } else {
+//                // keep null in the field
+//            }
 
         }
 
@@ -530,6 +541,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(final ExerciseLogHolder holder, int position) {
             final ExerciseLog exerciseLog = mExercises.get(position);
+            final String setWeigth = "";
 
             if(mExercisesPendingRemoval.contains(exerciseLog)){
                 // we need to show the "undo" state of the row
@@ -555,36 +567,64 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 // we need to show the "normal" state
 
-                // Remove any existing FocusChangeListener that will be keyed to the wrong ListItem
-                if(holder.mOnFocusChangeListener != null){
-                    holder.mOnFocusChangeListener = null;
-//                    holder.mCurrentExerciseWeightTV.setOnFocusChangeListener(null); // remove it essentially
+                //////////////// FOCUSCHANGELISTENER APPROACH CURRENTLY NOT WORKING
+//                // Remove any existing FocusChangeListener that will be keyed to the wrong ListItem
+//                if(holder.mOnFocusChangeListener != null){
+//                    holder.mOnFocusChangeListener = null;
+//                    holder.mCurrentExerciseWeightTV.setOnFocusChangeListener(holder.mOnFocusChangeListener); // remove it essentially
+//                }
+//
+//                View.OnFocusChangeListener onFocusChangeListener = new View.OnFocusChangeListener() {
+//                    @Override
+//                    public void onFocusChange(View v, boolean hasFocus) {
+//                        if(!hasFocus){
+//                            // The user is most likely done typing
+//                            // So time to update the table with the weight
+//
+//                            holder.inputWeight = holder.mCurrentExerciseWeightTV.getText().toString();
+//                            holder.mPreviousExerciseWeightTV.setText(holder.inputWeight);
+//
+//                            try {
+//                                updateExerciseWeight(Double.parseDouble(holder.inputWeight), exerciseLog.id());
+//                                Log.i(TAG, "the weight changed to " + holder.inputWeight);
+//                            } catch(NumberFormatException ex){
+//                                Log.e(TAG, "The input for the current weight was in the wrong format.");
+//                            }
+//
+//
+//                        }
+//                    }
+//                };
+//
+//                holder.mCurrentExerciseWeightTV.setOnFocusChangeListener(onFocusChangeListener);
+//
+//                holder.bindExercise(exerciseLog, onFocusChangeListener);
+
+                if (holder.mTextWatcher != null) {
+                    holder.mCurrentExerciseWeightTV.removeTextChangedListener(holder.mTextWatcher);
                 }
 
-                View.OnFocusChangeListener onFocusChangeListener = new View.OnFocusChangeListener() {
+                holder.mTextWatcher = new TextWatcher() {
                     @Override
-                    public void onFocusChange(View v, boolean hasFocus) {
-                        if(!hasFocus){
-                            // The user is most likely done typing
-                            // So time to update the table with the weight
+                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
-                            holder.inputWeight = holder.mCurrentExerciseWeightTV.getText().toString();
+                    }
 
-                            try {
-                                updateExerciseWeight(Double.parseDouble(holder.inputWeight), exerciseLog.id());
-                                Log.i(TAG, "the weight changed to " + holder.inputWeight);
-                            } catch(NumberFormatException ex){
-                                Log.e(TAG, "The input for the current weight was in the wrong format.");
-                            }
+                    @Override
+                    public void onTextChanged(CharSequence s, int start, int before, int count) {
 
+                    }
 
-                        }
+                    @Override
+                    public void afterTextChanged(Editable s) {
+                        holder.inputWeight = s.toString();
+                        Log.e(TAG, "The weight is set at" + holder.inputWeight);
                     }
                 };
 
-                holder.mCurrentExerciseWeightTV.setOnFocusChangeListener(onFocusChangeListener);
-                
-                holder.bindExercise(exerciseLog, onFocusChangeListener);
+                holder.mCurrentExerciseWeightTV.addTextChangedListener(holder.mTextWatcher);
+
+                holder.bindExercise(exerciseLog);
                 holder.mUndoButton.setVisibility(View.GONE);
                 holder.mUndoButton.setOnClickListener(null);
             }
@@ -655,7 +695,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
-
 
 
 }
