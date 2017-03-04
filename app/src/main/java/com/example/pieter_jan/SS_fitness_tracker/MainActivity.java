@@ -495,6 +495,7 @@ public class MainActivity extends AppCompatActivity {
             if(exerciseLog.weight() != null){ //check if there already is a weight in the table
                 mPreviousExerciseWeightTV.setText(mExerciseLog.weight().toString());
                 mCurrentExerciseWeightTV.setText(mExerciseLog.weight().toString());
+                Log.i(TAG, "There was no previous weight");
             } else {
                 // keep null in the field
                 mCurrentExerciseWeightTV.setText("");
