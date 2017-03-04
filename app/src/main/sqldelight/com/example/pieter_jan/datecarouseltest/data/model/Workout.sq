@@ -1,0 +1,47 @@
+CREATE TABLE workout_db (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    date	TEXT,
+    progr	INTEGER,
+    squat_weight	INTEGER,
+    squat_reps	INTEGER,
+    bench_weigth	INTEGER,
+    bench_reps	INTEGER,
+    press_weight	INTEGER,
+    press_reps	INTEGER,
+    deadlift_weight	INTEGER,
+    deadlift_reps	INTEGER
+);
+
+SelectAll:
+SELECT * FROM workout_db;
+
+SelectWorkoutByDate:
+SELECT * FROM workout_db WHERE date = ?;
+
+SelectWorkoutById:
+SELECT * FROM workout_db WHERE id = ?;
+
+SelectWorkoutByProgram:
+SELECT * FROM workout_db WHERE progr = ?;
+
+InsertWorkout:
+INSERT INTO workout_db(date, progr, squat_weight, squat_reps, bench_weigth, bench_reps,
+press_weight, press_reps, deadlift_weight, deadlift_reps) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+DeleteWorkoutByDate:
+DELETE FROM workout_db WHERE date = ?;
+
+DeleteWorkoutById:
+DELETE FROM workout_db WHERE id = ?;
+
+FindIdByDate:
+SELECT * FROM workout_db WHERE date = ?;
+
+FindDateById:
+SELECT * FROM workout_db WHERE id = ?;
+
+FindDateByProgram:
+SELECT * FROM workout_db WHERE progr = ?;
+
+
+

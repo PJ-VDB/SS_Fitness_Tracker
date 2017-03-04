@@ -1,0 +1,41 @@
+CREATE TABLE exercise_log (
+    id  INTEGER PRIMARY KEY AUTOINCREMENT,
+                exercise_name TEXT,
+                date   TEXT,
+                note TEXT,
+                weight REAL,
+                succeeded INTEGER,
+    FOREIGN KEY(exercise_name) REFERENCES exercises(name)
+);
+
+InsertExerciseInLog:
+INSERT INTO exercise_log(exercise_name, date, note, weight, succeeded) VALUES (?, ?, ?, ?, ?);
+
+SelectAll:
+SELECT * FROM exercise_log;
+--JOIN exercises ON exercise_log.exercise_name = exercises.name;
+
+SelectExerciseByDateFromLog:
+SELECT * FROM exercise_log WHERE date = ?;
+
+SelectExerciseByIdFromLog:
+SELECT * FROM exercise_log WHERE id = ?;
+
+SelectExerciseByNameFromLog:
+SELECT * FROM exercise_log WHERE exercise_name = ?;
+
+DeleteWorkoutByDate:
+DELETE FROM workout_db WHERE date = ?;
+
+DeleteWorkoutById:
+DELETE FROM workout_db WHERE id = ?;
+
+UpdateWorkoutWeightById:
+UPDATE exercise_log
+SET weight = ?
+WHERE id = ?;
+
+UpdateWorkoutStatusById:
+UPDATE exercise_log
+SET succeeded = ?
+WHERE id = ?;

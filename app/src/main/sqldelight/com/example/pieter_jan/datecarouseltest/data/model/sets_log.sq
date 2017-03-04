@@ -1,0 +1,29 @@
+CREATE TABLE sets_log(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT,
+    reps INTEGER,
+    weight REAL,
+    note TEXT,
+    exercise_log_id INTEGER,
+    exercise_name INTEGER,
+    FOREIGN KEY(exercise_log_id) REFERENCES exercise_log(id),
+    FOREIGN KEY(exercise_name) REFERENCES exercises(name)
+    );
+
+InsertSet:
+INSERT INTO sets_log(date, reps, weight, note, exercise_log_id, exercise_name) VALUES (?, ?, ?, ?, ?, ?);
+
+SelectAll:
+SELECT * FROM sets_log;
+
+SelectSetsById:
+SELECT * FROM sets_log WHERE id = ?;
+
+SelectSetsByDate:
+SELECT * FROM sets_log WHERE date = ?;
+
+SelectSetsByExerciseId:
+SELECT * FROM sets_log WHERE exercise_log_id = ?;
+
+SelectSetsByExerciseName:
+SELECT * FROM sets_log WHERE exercise_name = ?;

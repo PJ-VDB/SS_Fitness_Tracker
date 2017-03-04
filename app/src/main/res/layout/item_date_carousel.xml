@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/dateEntryLayout"
+              android:orientation="vertical"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:gravity="center"
+              android:layout_weight="1"
+    >
+
+    <TextView
+        android:id="@+id/dayOfMonthTV"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:textColor="@android:color/white"
+        android:textSize="17sp"
+        />
+
+    <TextView
+        android:id="@+id/monthOfYearTV"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:textColor="@android:color/white"
+        android:textSize="17sp"
+        />
+
+</LinearLayout>

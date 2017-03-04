@@ -1,0 +1,18 @@
+CREATE TABLE exercises (
+    name TEXT PRIMARY KEY,
+    note TEXT
+);
+
+SelectAll:
+SELECT * FROM exercises;
+
+SelectExerciseByName:
+SELECT * FROM exercises WHERE name = ?;
+
+InsertExercise:
+INSERT INTO exercises(name, note) VALUES (?, ?);
+
+DeleteExercise:
+DELETE FROM exercises WHERE name = ?;
+
+
