@@ -497,6 +497,7 @@ public class MainActivity extends AppCompatActivity {
                 mCurrentExerciseWeightTV.setText(mExerciseLog.weight().toString());
             } else {
                 // keep null in the field
+                mCurrentExerciseWeightTV.setText("");
             }
 
         }
@@ -569,6 +570,7 @@ public class MainActivity extends AppCompatActivity {
                             // So time to update the table with the weight
 
                             holder.inputWeight = holder.mCurrentExerciseWeightTV.getText().toString();
+//                            holder.mPreviousExerciseWeightTV.setText(holder.inputWeight);
 
                             try {
                                 updateExerciseWeight(Double.parseDouble(holder.inputWeight), exerciseLog.id());
