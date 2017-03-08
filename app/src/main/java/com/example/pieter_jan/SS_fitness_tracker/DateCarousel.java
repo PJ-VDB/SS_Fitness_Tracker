@@ -100,11 +100,15 @@ public class DateCarousel extends HorizontalScrollView implements AbsListView.On
                                         + "/"
                                         + dt.year().getAsText());
 
-//                        String finalDesiredDate = Helpers.prepareDateForAPIRequest(formattedDate.toLocalDate());
+                        String finalDesiredDate = formattedDate.toLocalDate().toString();
 //
 //                        String todaysDateFormatted = dt.getYear() + "-" + dt.getMonthOfYear() + "-" + dt.getDayOfMonth();
 
-                        String finalDesiredDate = formattedDate.getYear() + "-" + formattedDate.getMonthOfYear() + "-" + formattedDate.getDayOfMonth();
+//                        String finalDesiredDate = formattedDate.getYear() + "-" + formattedDate.getMonthOfYear() + "-" + formattedDate.getDayOfMonth();
+
+//                        DateTimeFormatter formatterForStorage = DateTimeFormat.forPattern("dd/mm/yyyy");
+
+//                        String finalDesiredDate = formattedDate.toString(formatterForStorage);
 
                         for (CarouselClickListener listener : clickListeners) {
                             listener.handleClick(finalDesiredDate);

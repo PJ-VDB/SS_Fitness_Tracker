@@ -29,8 +29,11 @@ import org.joda.time.format.DateTimeFormatter;
                         + "/"
                         + dt.year().getAsText());
 
-        String finalDesiredDate = formattedDate.getYear() + "-" + formattedDate.getMonthOfYear() + "-" + formattedDate.getDayOfMonth();
+//        String finalDesiredDate = formattedDate.getYear() + "-" + formattedDate.getMonthOfYear() + "-" + formattedDate.getDayOfMonth();
+
+        String finalDesiredDate = formattedDate.toLocalDate().toString();
 
         return finalDesiredDate;
+
     }
 }

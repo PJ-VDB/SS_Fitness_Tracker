@@ -1,5 +1,6 @@
 package com.example.pieter_jan.SS_fitness_tracker;
 
+import android.animation.TimeInterpolator;
 import android.app.Activity;
 import android.content.Context;
 import android.database.Cursor;
@@ -20,19 +21,27 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.LinearInterpolator;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.TextView;
 
 import com.example.pieter_jan.SS_fitness_tracker.data.model.ExerciseLog;
 import com.example.pieter_jan.SS_fitness_tracker.data.model.OpenHelper;
 import com.getbase.floatingactionbutton.FloatingActionButton;
+import com.getbase.floatingactionbutton.FloatingActionsMenu;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import at.grabner.circleprogress.CircleProgressView;
+import at.grabner.circleprogress.TextMode;
+
+import static com.example.pieter_jan.SS_fitness_tracker.data.model.exercise_logModel.SELECTMOSTRECENTOFEACHEXERCISE;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -43,6 +52,10 @@ public class MainActivity extends AppCompatActivity {
     private Context mContext;
     private boolean hasWorkOut;
 
+    CircleProgressView mCircleView;
+
+    private FrameLayout mInterceptorFrame;
+    private FloatingActionsMenu mFloatingActionMenu;
     private FloatingActionButton actionA;
     private FloatingActionButton actionB;
     private FloatingActionButton actionC;
@@ -51,7 +64,28 @@ public class MainActivity extends AppCompatActivity {
     private ExerciseLogAdapter mAdapter;
 
     private List<ExerciseLog> mExerciseLogs;
+    private List<ExerciseLog> mMostRecentOfEachExerciseList;
     private String currentDate;
+
+    long startTime = 0;
+    int amMins = 5;
+
+    Handler timerHandler = new Handler();
+    Runnable timerRunnable = new Runnable() {
+
+        @Override
+        public void run() {
+            long millis = System.currentTimeMillis() - startTime;
+            int seconds = (int) (millis / 1000);
+            int minutes = seconds / 60;
+            seconds = seconds % 60;
+
+            mCircleView.setText(String.format("%d:%02d", minutes, seconds));
+            mCircleView.setValue(seconds/(amMins*60/100));
+
+            timerHandler.postDelayed(this, 500);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,12 +99,39 @@ public class MainActivity extends AppCompatActivity {
         mDatabase = mOpenHelper.getInstance(mContext).getWritableDatabase();
         currentDate = Utilities.getTodayDate(); // the date used to fetch the data and update the UI
 
+        Log.i(TAG, "The retrieved time is " + currentDate);
 
         //---
 
         mExerciseRecyclerView = (RecyclerView) findViewById(R.id.exercises_recycler_view);
         setupRecyclerView();
 
+        // The chronometer
+
+        mCircleView = (CircleProgressView) findViewById(R.id.circleView);
+
+        TimeInterpolator linearInterpolator = new LinearInterpolator();
+
+        mCircleView.setTextMode(TextMode.TEXT);
+        mCircleView.setText("start");
+        mCircleView.setValueInterpolator(linearInterpolator);
+        mCircleView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+//                CircleProgressView b = (CircleProgressView) v;
+                if (mCircleView.getCurrentValue() != 0) {
+                    timerHandler.removeCallbacks(timerRunnable);
+//                    mCircleView.setText("start");
+                    mCircleView.setValue(0);
+
+                } else {
+                    startTime = System.currentTimeMillis();
+                    timerHandler.postDelayed(timerRunnable, 0);
+                  }
+
+            }
+        });
 
 
         //-------------------- Some tests
@@ -91,6 +152,18 @@ public class MainActivity extends AppCompatActivity {
         updateUI();
 
         // Set up FAB
+        mInterceptorFrame = (FrameLayout) findViewById(R.id.fl_interceptor);
+        mInterceptorFrame.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                Log.d(TAG, "onTouch  " + "");
+                if (mFloatingActionMenu.isExpanded()) {
+                    mFloatingActionMenu.collapse();
+                    return true;
+                }
+                return false;
+            }
+        });
         setupFAB();
 
         // Set up datecarousel
@@ -133,8 +206,13 @@ public class MainActivity extends AppCompatActivity {
         InputMethodManager inputMethodManager =
                 (InputMethodManager) activity.getSystemService(
                         Activity.INPUT_METHOD_SERVICE);
-        inputMethodManager.hideSoftInputFromWindow(
-                activity.getCurrentFocus().getWindowToken(), 0);
+
+        View focusedView = activity.getCurrentFocus();
+
+        if(focusedView != null) {
+            inputMethodManager.hideSoftInputFromWindow(
+                    focusedView.getWindowToken(), 0);
+        }
     }
 
     /**
@@ -154,7 +232,7 @@ public class MainActivity extends AppCompatActivity {
             boolean initiated;
 
             private void init() {
-                background = new ColorDrawable(Color.RED);
+                background = new ColorDrawable(getResources().getColor(R.color.remove_card));
                 xMark = ContextCompat.getDrawable(MainActivity.this, R.drawable.ic_clear_24dp);
                 xMark.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_ATOP);
                 xMarkMargin = (int) MainActivity.this.getResources().getDimension(R.dimen.ic_clear_margin);
@@ -240,7 +318,7 @@ public class MainActivity extends AppCompatActivity {
             boolean initiated;
 
             private void init() {
-                background = new ColorDrawable(Color.RED);
+                background = new ColorDrawable(getResources().getColor(R.color.remove_card));
                 initiated = true;
             }
 
@@ -316,6 +394,7 @@ public class MainActivity extends AppCompatActivity {
      * Setup of the floating action button with the menu to add workouts
      */
     private void setupFAB() {
+        mFloatingActionMenu = (FloatingActionsMenu) findViewById(R.id.multiple_actions);
         actionA = (FloatingActionButton) findViewById(R.id.action_a);
         actionB = (FloatingActionButton) findViewById(R.id.action_b);
         actionC = (FloatingActionButton) findViewById(R.id.action_c);
@@ -326,7 +405,7 @@ public class MainActivity extends AppCompatActivity {
                 actionA.setTitle("Workout A added");
                 addWorkoutA();
                 updateUI();
-
+                mFloatingActionMenu.collapse();
                 // You can only add 1 type of program per day (you can still add extra exercises)
 //                actionA.setClickable(false);
 //                actionB.setClickable(false);
@@ -340,7 +419,7 @@ public class MainActivity extends AppCompatActivity {
                 actionB.setTitle("Workout B added");
                 addWorkoutB();
                 updateUI();
-
+                mFloatingActionMenu.collapse();
                 // TODO: you can only add 1 program, but you can still add other exercises
                 //TODO: close fab & make other buttons unclickable
             }
@@ -352,6 +431,8 @@ public class MainActivity extends AppCompatActivity {
                 actionC.setTitle("Squat added");
                 //TODO: close fab & make other buttons unclickable
                 addSquat();
+                updateUI();
+                mFloatingActionMenu.collapse();
             }
         });
     }
@@ -391,10 +472,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void addSquat() {
-        ExerciseLog.InsertExerciseInLog insertExercise = new ExerciseLog.InsertExerciseInLog(mDatabase);
-        insertExercise.bind("Squat", currentDate, null, null, null);
-        insertExercise.program.execute();
-        updateUI();
+        addExercise("Squat", currentDate);
     }
 
     // Recursive way to set up the UI so that the keyboard is also hid when anything other than an edittext is clicked
@@ -422,12 +500,13 @@ public class MainActivity extends AppCompatActivity {
 
     public void updateUI(){
         mExerciseLogs = fetchExercisesOfDay(currentDate);
+        mMostRecentOfEachExerciseList = fetchPreviousExercises(currentDate);
 
         if (mAdapter == null){
-            mAdapter = new ExerciseLogAdapter(mExerciseLogs);
+            mAdapter = new ExerciseLogAdapter(mExerciseLogs, mMostRecentOfEachExerciseList);
             mExerciseRecyclerView.setAdapter(mAdapter);
         } else {
-            mAdapter.setExercises(mExerciseLogs);
+            mAdapter.setExercises(mExerciseLogs, mMostRecentOfEachExerciseList);
             mAdapter.notifyDataSetChanged();
         }
     }
@@ -457,6 +536,29 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private List<ExerciseLog> fetchPreviousExercises(String date){
+        List<ExerciseLog> mostRecentOfEachExerciseList = new ArrayList<>();
+        String[] selectionArgs = new String[]{ date };
+        Cursor cursor = mDatabase.rawQuery(SELECTMOSTRECENTOFEACHEXERCISE, selectionArgs);
+
+        if((cursor != null) && (cursor.getCount() > 0)){
+            cursor.moveToFirst();
+            while (!cursor.isAfterLast()){
+                mostRecentOfEachExerciseList.add(ExerciseLog.FACTORY.selectExerciseByDateFromLogMapper().map(cursor));
+                cursor.moveToNext();
+            }
+            cursor.close();
+
+            Log.i(TAG, "the amount of recent exercises is " + mostRecentOfEachExerciseList.size());
+            return mostRecentOfEachExerciseList;
+        }
+        else {
+            Log.i(TAG, "No previous exercises found...");
+            return null; // there is no workout yet on this date
+        }
+
+    }
+
     private class ExerciseLogHolder extends RecyclerView.ViewHolder{
         private TextView mExerciseNameTV;
         private TextView mPreviousExerciseWeightTV;
@@ -465,8 +567,6 @@ public class MainActivity extends AppCompatActivity {
         private Button mUndoButton;
 
         private String inputWeight;
-
-        private View.OnFocusChangeListener mOnFocusChangeListener;
 
         private ExerciseLog mExerciseLog;
 
@@ -479,26 +579,25 @@ public class MainActivity extends AppCompatActivity {
             mExerciseInfoTV = (TextView) itemView.findViewById(R.id.exercise_info_tv);
             mUndoButton = (Button) itemView.findViewById(R.id.undo_button);
 
-//            mCurrentExerciseWeightTV.setOnFocusChangeListener(mOnFocusChangeListener);
-
         }
 
-        public void bindExercise(com.example.pieter_jan.SS_fitness_tracker.data.model.ExerciseLog exerciseLog, View.OnFocusChangeListener onFocusChangeListener){
-
-            mOnFocusChangeListener = onFocusChangeListener;
+        public void bindExercise(com.example.pieter_jan.SS_fitness_tracker.data.model.ExerciseLog exerciseLog, String previousWeight){
 
             mExerciseLog = exerciseLog;
 
             mExerciseNameTV.setText(mExerciseLog.exercise_name());
-//            mPreviousExerciseWeightTV.setText(mExerciseLog.date());
 
             if(exerciseLog.weight() != null){ //check if there already is a weight in the table
-                mPreviousExerciseWeightTV.setText(mExerciseLog.weight().toString());
                 mCurrentExerciseWeightTV.setText(mExerciseLog.weight().toString());
-                Log.i(TAG, "There was no previous weight");
             } else {
                 // keep null in the field
                 mCurrentExerciseWeightTV.setText("");
+            }
+
+            if(previousWeight != null ){
+                mPreviousExerciseWeightTV.setText(previousWeight);
+            } else {
+                mPreviousExerciseWeightTV.setText("");
             }
 
         }
@@ -507,6 +606,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private class ExerciseLogAdapter extends RecyclerView.Adapter<ExerciseLogHolder>{
+        private List<ExerciseLog> mPreviousExercises;
         private List<ExerciseLog> mExercises;
         private List<ExerciseLog> mExercisesPendingRemoval;
         boolean undoOn = false; // Works partially, some bug with the red background
@@ -518,14 +618,15 @@ public class MainActivity extends AppCompatActivity {
         HashMap<ExerciseLog, Runnable> pendingRunnables = new HashMap<>(); // map of items to pending runnables, so we can cancel a removal if need be
 
 
-        public ExerciseLogAdapter(List<ExerciseLog> exercises){
+        public ExerciseLogAdapter(List<ExerciseLog> exercises, List<ExerciseLog> previousExercises){
             mExercises = exercises;
+            mPreviousExercises = previousExercises;
             mExercisesPendingRemoval = new ArrayList<>();
         }
 
         @Override
         public ExerciseLogHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View view = getLayoutInflater().inflate(R.layout.exercise_banner, parent, false);
+            View view = getLayoutInflater().inflate(R.layout.exercise_banner2, parent, false);
             return new ExerciseLogHolder(view);
         }
 
@@ -533,9 +634,25 @@ public class MainActivity extends AppCompatActivity {
         public void onBindViewHolder(final ExerciseLogHolder holder, int position) {
             final ExerciseLog exerciseLog = mExercises.get(position);
 
+            final String exerciseName = exerciseLog.exercise_name(); //TODO: check this final statement
+            String previousWeight = null;
+
+            if(mPreviousExercises != null) {
+                for (ExerciseLog d : mPreviousExercises) {
+                    if (d.exercise_name() != null && d.exercise_name().equals(exerciseName)) {
+                        //something here
+                        if (d.weight() != null) { //maybe someone forgot to enter the weight previously
+                            previousWeight = String.valueOf(d.weight());
+                            Log.i(TAG, "The previous weight for " + exerciseName + "is " + previousWeight);
+                        }
+                    }
+                }
+            }
+
+
             if(mExercisesPendingRemoval.contains(exerciseLog)){
                 // we need to show the "undo" state of the row
-                holder.itemView.setBackgroundColor(Color.RED);
+                holder.itemView.setBackgroundColor(getResources().getColor(R.color.remove_card));
                 holder.mExerciseNameTV.setVisibility(View.GONE);
                 holder.mPreviousExerciseWeightTV.setVisibility(View.GONE);
                 holder.mCurrentExerciseWeightTV.setVisibility(View.GONE);
@@ -556,12 +673,6 @@ public class MainActivity extends AppCompatActivity {
                 });
             } else {
                 // we need to show the "normal" state
-
-                // Remove any existing FocusChangeListener that will be keyed to the wrong ListItem
-                if(holder.mOnFocusChangeListener != null){
-                    holder.mOnFocusChangeListener = null;
-//                    holder.mCurrentExerciseWeightTV.setOnFocusChangeListener(null); // remove it essentially
-                }
 
                 View.OnFocusChangeListener onFocusChangeListener = new View.OnFocusChangeListener() {
                     @Override
@@ -586,8 +697,8 @@ public class MainActivity extends AppCompatActivity {
                 };
 
                 holder.mCurrentExerciseWeightTV.setOnFocusChangeListener(onFocusChangeListener);
-                
-                holder.bindExercise(exerciseLog, onFocusChangeListener);
+
+                holder.bindExercise(exerciseLog, previousWeight);
                 holder.mUndoButton.setVisibility(View.GONE);
                 holder.mUndoButton.setOnClickListener(null);
             }
@@ -605,8 +716,9 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        public void setExercises(List<ExerciseLog> exercises){
+        public void setExercises(List<ExerciseLog> exercises, List<ExerciseLog> previousExercises){
             mExercises = exercises;
+            mPreviousExercises = previousExercises;
         }
 
         public void setUndoOn(boolean undoOn){
@@ -648,7 +760,6 @@ public class MainActivity extends AppCompatActivity {
                 deleteExercise(item.id());
                 notifyItemRemoved(position);
                 updateUI();
-                //TODO: updateUI() ??
             }
         }
 

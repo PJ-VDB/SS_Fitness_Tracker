@@ -5,15 +5,11 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+
 import com.squareup.sqldelight.RowMapper;
 import com.squareup.sqldelight.SqlDelightCompiledStatement;
 import com.squareup.sqldelight.SqlDelightStatement;
-import java.lang.Deprecated;
-import java.lang.Double;
-import java.lang.Long;
-import java.lang.Override;
-import java.lang.String;
-import java.lang.StringBuilder;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -55,6 +51,34 @@ public interface exercise_logModel {
 
     String SELECTEXERCISEBYNAMEFROMLOG = ""
             + "SELECT * FROM exercise_log WHERE exercise_name = ?";
+
+    String SELECTMOSTRECENTOFEACHEXERCISE = ""
+    + "SELECT id,\n"
+    + "exercise_name,\n"
+    + "max(date) as date,\n"
+    + "note, \n"
+    + "weight,\n"
+    + "succeeded FROM exercise_log WHERE date < ? GROUP BY exercise_name";
+
+
+//    String SELECTMOSTRECENTOFEACHEXERCISE = ""
+//            + "Select id,\n"
+//            + "u.[exercise_name],\n"
+//            + "q.[date],\n"
+//            + "note,\n"
+//            + "weight,\n"
+//            + "succeeded,\n"
+//            + "From [exercise_log] As u\n"
+//            + "Inner Join (\n"
+//            + "Select [exercise_name],\n"
+//            + "max(date) as [date]\n"
+//            + "From [exercise_log]\n"
+//            + "Group By [exercise_name]) As [q]\n"
+//            + "On u.exercise_name = q.exercise_name\n"
+//            + "And u.date = q.date";
+
+    String SELECTEXERCISEBYNAMEFROMLOGANDSORT = ""
+            + "SELECT * FROM exercise_log WHERE exercise_name = ? AND date < ? ORDER BY date";
 
     @Nullable
     Long id();
