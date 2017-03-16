@@ -4,4 +4,21 @@
     <string name="add_workout_b">Add Workout B</string>
     <string name="add_squat">Add Squat</string>
     <string name="button_undo">Undo</string>
+    <string name="previous_weight_hint">None</string>
+    <string name="enter_weight">Add</string>
+    <string name="weight_unit">kg</string>
+    <string name="menu_change_unit">Change unit</string>
+    <string name="settings">Settings</string>
+    <string name="menu_share">Share</string>
+
+    <string name="pref_units_label">Pick Your Units</string>
+    <string name="pref_units_key" translatable="false">units</string>
+    <string name="pref_units_metric" translatable="false">Kilogram (kg)</string>
+    <string name="pref_units_imperial" translatable="false">Pounds (lbs)</string>
+
+    <string name="pref_units_label_metric">kg</string>
+    <string name="pref_units_label_imperial">lbs</string>
+    <string name="title_activity_settings">Settings</string>
+    <string name="pref_units_default">kg</string>
+    <string name="notification_title">SS Workout Timer</string>
 </resources>

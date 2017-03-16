@@ -2,7 +2,11 @@ package com.example.pieter_jan.SS_fitness_tracker;
 
 import android.animation.TimeInterpolator;
 import android.app.Activity;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Canvas;
@@ -12,12 +16,18 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.ShareActionProvider;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,10 +52,12 @@ import at.grabner.circleprogress.CircleProgressView;
 import at.grabner.circleprogress.TextMode;
 
 import static com.example.pieter_jan.SS_fitness_tracker.data.model.exercise_logModel.SELECTMOSTRECENTOFEACHEXERCISE;
+import static java.lang.String.valueOf;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
+    private static final Object WORKOUT_SHARE_HASHTAG = "#SSWorkoutApp";
     private DateCarousel dateCarousel;
     private SQLiteDatabase mDatabase;
     private OpenHelper mOpenHelper;
@@ -53,6 +65,8 @@ public class MainActivity extends AppCompatActivity {
     private boolean hasWorkOut;
 
     CircleProgressView mCircleView;
+    float mCircleViewValue;
+    String mCircleViewValueKey;
 
     private FrameLayout mInterceptorFrame;
     private FloatingActionsMenu mFloatingActionMenu;
@@ -67,30 +81,72 @@ public class MainActivity extends AppCompatActivity {
     private List<ExerciseLog> mMostRecentOfEachExerciseList;
     private String currentDate;
 
+    private String weightUnit;
+    private ShareActionProvider mShareActionProvider;
+
     long startTime = 0;
     int amMins = 5;
 
+    private NotificationManager mNotificationManager;
+    private NotificationCompat.Builder mBuilder;
+    private int mId;
+    private boolean isTiming;
+    private boolean isTimingExtra;
+    private String isTimingKey;
+
     Handler timerHandler = new Handler();
-    Runnable timerRunnable = new Runnable() {
+    final Runnable timerRunnable = new Runnable() {
 
         @Override
         public void run() {
+
+            isTiming = true;
+
             long millis = System.currentTimeMillis() - startTime;
             int seconds = (int) (millis / 1000);
             int minutes = seconds / 60;
             seconds = seconds % 60;
 
             mCircleView.setText(String.format("%d:%02d", minutes, seconds));
-            mCircleView.setValue(seconds/(amMins*60/100));
+            mCircleView.setValue((seconds+minutes*60)/(amMins*60/100));
+
+            // update notification
+
+            String minuteStr;
+            String secondStr;
+            if(minutes<10){
+                minuteStr = "0" + minutes;
+            } else { minuteStr = Integer.toString(minutes) ; }
+            if(seconds<10){
+                secondStr = "0" + seconds;
+            } else { secondStr = Integer.toString(seconds) ; }
+
+            String timeString = minuteStr + ":" + secondStr;
+
+            Log.i(TAG, timeString + "isTiming = " + isTiming);
+
+            mBuilder.setContentText(timeString);
+
+            mNotificationManager.notify(
+                    mId,
+                    mBuilder.build());
 
             timerHandler.postDelayed(this, 500);
         }
     };
 
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateUI();
+        refreshUnits();
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main_constraint);
         setupUI(findViewById(R.id.activity_main)); // Set up the UI so that keyboard is hidden if something is touched
 
         mContext = getApplicationContext();
@@ -98,8 +154,6 @@ public class MainActivity extends AppCompatActivity {
         // Set up database: Should always be in the beginning!
         mDatabase = mOpenHelper.getInstance(mContext).getWritableDatabase();
         currentDate = Utilities.getTodayDate(); // the date used to fetch the data and update the UI
-
-        Log.i(TAG, "The retrieved time is " + currentDate);
 
         //---
 
@@ -110,28 +164,23 @@ public class MainActivity extends AppCompatActivity {
 
         mCircleView = (CircleProgressView) findViewById(R.id.circleView);
 
-        TimeInterpolator linearInterpolator = new LinearInterpolator();
-
-        mCircleView.setTextMode(TextMode.TEXT);
-        mCircleView.setText("start");
-        mCircleView.setValueInterpolator(linearInterpolator);
-        mCircleView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-//                CircleProgressView b = (CircleProgressView) v;
-                if (mCircleView.getCurrentValue() != 0) {
-                    timerHandler.removeCallbacks(timerRunnable);
-//                    mCircleView.setText("start");
-                    mCircleView.setValue(0);
-
-                } else {
-                    startTime = System.currentTimeMillis();
-                    timerHandler.postDelayed(timerRunnable, 0);
-                  }
-
+        // Check if the timer was going on (check for mCircleViewValue)
+        if (savedInstanceState == null) {
+            Bundle extras = getIntent().getExtras();
+            if(extras == null) {
+                isTimingExtra = false;
+            } else {
+//                isTimingExtra = extras.getBoolean(isTimingKey);
+                isTimingExtra = true;
+                Log.e(TAG, "Intent passed this through: Is the timer running? " + isTimingExtra);
             }
-        });
+        } else {
+            isTimingExtra = (boolean) savedInstanceState.getSerializable(isTimingKey);
+            Log.e(TAG, "Intent passed this through: Is the timer running? " + isTimingExtra);
+        }
+
+        setupTimer();
+
 
 
         //-------------------- Some tests
@@ -149,21 +198,10 @@ public class MainActivity extends AppCompatActivity {
 //        hasWorkOut = isWorkoutAvailable(Utilities.getTodayDate());
         //-------------------------------------
 
-        updateUI();
+//        updateUI();
 
         // Set up FAB
-        mInterceptorFrame = (FrameLayout) findViewById(R.id.fl_interceptor);
-        mInterceptorFrame.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                Log.d(TAG, "onTouch  " + "");
-                if (mFloatingActionMenu.isExpanded()) {
-                    mFloatingActionMenu.collapse();
-                    return true;
-                }
-                return false;
-            }
-        });
+
         setupFAB();
 
         // Set up datecarousel
@@ -193,6 +231,159 @@ public class MainActivity extends AppCompatActivity {
                 dateCarousel.fullScroll(HorizontalScrollView.FOCUS_RIGHT);
             }
         });
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+//        outState.putFloat();
+        super.onSaveInstanceState(outState);
+    }
+
+    private void setupTimer() {
+
+        TimeInterpolator linearInterpolator = new LinearInterpolator();
+
+        mCircleView.setTextMode(TextMode.TEXT);
+        mCircleView.setText("start");
+        mCircleView.setValueInterpolator(linearInterpolator);
+
+        mCircleView.setOnClickListener(
+                new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                if (mCircleView.getCurrentValue() != 0) { // from timer -> pause
+                    timerHandler.removeCallbacks(timerRunnable);
+                    mCircleView.setValue(0);
+                    mNotificationManager.cancel(mId);
+                    isTiming = false;
+
+                } else { // from pause -> timer
+
+                    if(!isTimingExtra) { //check if a timer is already going on
+                        setNotification();
+                        startTime = System.currentTimeMillis();
+                        timerHandler.postDelayed(timerRunnable, 0);
+                    }
+                  }
+
+            }
+        });
+    }
+
+//    public interface TimerClickListener{
+//        void handleClick(float timerValue);
+//    }
+
+
+
+    private void setNotification() {
+
+        // Make a notification
+        mBuilder =
+                new NotificationCompat.Builder(this)
+                        .setSmallIcon(R.drawable.ic_timer_black_24dp)
+                        .setContentTitle(getString(R.string.notification_title))
+                        .setContentText("");
+//                        .setAutoCancel(true);
+
+
+        // Intent for the notification
+
+        final Intent notificationIntent = new Intent(this, MainActivity.class);
+        notificationIntent.setAction(Intent.ACTION_MAIN);
+        notificationIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        notificationIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        PendingIntent resultPendingIntent =
+                PendingIntent.getActivity(
+                        this,
+                        0,
+                        notificationIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT
+                );
+
+        mBuilder.setContentIntent(resultPendingIntent);
+
+        mNotificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+        mId = 1;
+        mNotificationManager.notify(mId, mBuilder.build());
+
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.option_menu, menu);
+
+        MenuItem shareItem = menu.findItem(R.id.menu_share);
+        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(shareItem);
+        setShareIntent(createShareWorkoutIntent());
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    private void setShareIntent(Intent shareIntent){
+        if (mShareActionProvider != null) {
+            mShareActionProvider.setShareIntent(shareIntent);
+        } else {
+            Log.d(TAG, "Share Action Provider is null? ");
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        int id = item.getItemId();
+        switch (id){
+            case R.id.menu_change_unit:
+                startActivity(new Intent(this, SettingsActivity.class));
+                return true;
+
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void refreshUnits(){
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        weightUnit = prefs.getString(getString(R.string.pref_units_key), getString(R.string.pref_units_default));
+        Log.i(TAG, "units refreshed to " + weightUnit);
+        updateUI();
+    }
+
+    private Intent createShareWorkoutIntent() {
+        Log.i(TAG, "Share intent created");
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.setType("text/plain");
+        shareIntent.putExtra(Intent.EXTRA_TEXT, makeShareMessage() + WORKOUT_SHARE_HASHTAG);
+        return shareIntent;
+    }
+
+    private String makeShareMessage() {
+
+        String shareString;
+
+        if(mAdapter != null && mAdapter.getItemCount() != 0){
+             shareString = "Look how much I have worked out today! \n";
+
+            for(int i = 0; i < mAdapter.getItemCount(); i++){
+                ExerciseLog exercise = mAdapter.getItem(i);
+
+                if(exercise.exercise_name() != null){
+                shareString = shareString + exercise.exercise_name(); }
+                if(exercise.weight() != null){
+                shareString = shareString + " " + exercise.weight().toString() + " " + weightUnit; }
+                if(exercise.note() != null){
+                shareString = shareString + " " + exercise.note();}
+                shareString = shareString + "\n";
+            }
+        }
+        else {
+            shareString = "No workout done today, get busy!";
+        }
+        return shareString;
     }
 
     private void setupRecyclerView() {
@@ -435,23 +626,46 @@ public class MainActivity extends AppCompatActivity {
                 mFloatingActionMenu.collapse();
             }
         });
+
+        // Makes the FAB menu close when clicked outside of the menu
+
+        mInterceptorFrame = (FrameLayout) findViewById(R.id.fl_interceptor);
+        mInterceptorFrame.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                Log.d(TAG, "onTouch  " + "");
+                if (mFloatingActionMenu.isExpanded()) {
+                    mFloatingActionMenu.collapse();
+                    return true;
+                }
+                return false;
+            }
+        });
+
+
     }
 
     private void addWorkoutA() {
-        addExercise("Squat", currentDate);
-        addExercise("Bench Press", currentDate);
-        addExercise("Deadlift", currentDate);
+        addExerciseWithNote("Squat", currentDate, "3x5");
+        addExerciseWithNote("Bench Press", currentDate, "3x5");
+        addExerciseWithNote("Deadlift", currentDate, "1x5");
     }
 
     private void addWorkoutB() {
-        addExercise("Squat", currentDate);
-        addExercise("Shoulder Press", currentDate);
-        addExercise("Deadlift", currentDate);
+        addExerciseWithNote("Squat", currentDate, "3x5");
+        addExerciseWithNote("Shoulder Press", currentDate, "3x5");
+        addExerciseWithNote("Deadlift", currentDate, "3x5");
     }
 
     private void addExercise(String name, String date){
         ExerciseLog.InsertExerciseInLog insertExercise = new ExerciseLog.InsertExerciseInLog(mDatabase);
         insertExercise.bind(name, date, null, null, null);
+        insertExercise.program.execute();
+    }
+
+    private void addExerciseWithNote(String name, String date, String note){
+        ExerciseLog.InsertExerciseInLog insertExercise = new ExerciseLog.InsertExerciseInLog(mDatabase);
+        insertExercise.bind(name, date, note, null, null);
         insertExercise.program.execute();
     }
 
@@ -461,7 +675,6 @@ public class MainActivity extends AppCompatActivity {
         deleteExercise.program.execute();
     }
 
-    // TODO: update the exercise when clicked with the weight and if succeeded
     private void updateExerciseWeight(double weight, long id){
         ExerciseLog.UpdateWorkoutWeightById updateExercise = new ExerciseLog.UpdateWorkoutWeightById(mDatabase);
         updateExercise.bind(weight, id);
@@ -478,6 +691,7 @@ public class MainActivity extends AppCompatActivity {
     // Recursive way to set up the UI so that the keyboard is also hid when anything other than an edittext is clicked
     public void setupUI(View view) {
 
+        weightUnit = getResources().getString(R.string.pref_units_default);
         // Set up touch listener for non-text box views to hide keyboard.
         if (!(view instanceof EditText)) {
             view.setOnTouchListener(new View.OnTouchListener() {
@@ -499,6 +713,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void updateUI(){
+
         mExerciseLogs = fetchExercisesOfDay(currentDate);
         mMostRecentOfEachExerciseList = fetchPreviousExercises(currentDate);
 
@@ -509,6 +724,10 @@ public class MainActivity extends AppCompatActivity {
             mAdapter.setExercises(mExerciseLogs, mMostRecentOfEachExerciseList);
             mAdapter.notifyDataSetChanged();
         }
+
+        setShareIntent(createShareWorkoutIntent());
+//        Log.i(TAG, "The message to be shared is: " + makeShareMessage());
+
     }
 
     //TODO: give day as input
@@ -565,6 +784,8 @@ public class MainActivity extends AppCompatActivity {
         private EditText mCurrentExerciseWeightTV;
         private TextView mExerciseInfoTV;
         private Button mUndoButton;
+        private TextView mValueUnitSymbol1;
+        private TextView mValueUnitSymbol2;
 
         private String inputWeight;
 
@@ -578,6 +799,10 @@ public class MainActivity extends AppCompatActivity {
             mCurrentExerciseWeightTV = (EditText) itemView.findViewById(R.id.current_exercise_weight_tv);
             mExerciseInfoTV = (TextView) itemView.findViewById(R.id.exercise_info_tv);
             mUndoButton = (Button) itemView.findViewById(R.id.undo_button);
+            mValueUnitSymbol1 = (TextView) itemView.findViewById(R.id.value_unit_symbol1);
+            mValueUnitSymbol2 = (TextView) itemView.findViewById(R.id.value_unit_symbol2);
+
+
 
         }
 
@@ -600,7 +825,22 @@ public class MainActivity extends AppCompatActivity {
                 mPreviousExerciseWeightTV.setText("");
             }
 
+            // Set the note
+            if(mExerciseLog.note() != null){
+                mExerciseInfoTV.setText(mExerciseLog.note());
+            } else { //assume classic scenario
+                mExerciseInfoTV.setText("3x5");
+            }
+
+            // Set the units for the weight
+            mValueUnitSymbol1.setText(weightUnit);
+            mValueUnitSymbol2.setText(weightUnit);
+
+            // Add the string to the sharemessage
+
+
         }
+
 
 
     }
@@ -642,7 +882,7 @@ public class MainActivity extends AppCompatActivity {
                     if (d.exercise_name() != null && d.exercise_name().equals(exerciseName)) {
                         //something here
                         if (d.weight() != null) { //maybe someone forgot to enter the weight previously
-                            previousWeight = String.valueOf(d.weight());
+                            previousWeight = valueOf(d.weight());
                             Log.i(TAG, "The previous weight for " + exerciseName + "is " + previousWeight);
                         }
                     }
@@ -748,6 +988,10 @@ public class MainActivity extends AppCompatActivity {
                 handler.postDelayed(pendingRemovalRunnable, PENDING_REMOVAL_TIMEOUT);
                 pendingRunnables.put(item, pendingRemovalRunnable);
             }
+        }
+
+        public ExerciseLog getItem(int position){
+            return mExercises.get(position);
         }
 
         public void remove(int position) {
