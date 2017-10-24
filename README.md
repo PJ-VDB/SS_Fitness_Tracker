@@ -1,4 +1,4 @@
-
+<h1> Starting Strength Fitness Tracker </h1>
 
 <h2> The Program </h2>
 
@@ -29,6 +29,13 @@ Workout B
 Furthermore, while this workout seems short on paper, time will be spent on the warmup and resting inbetween sets. Strength trainers discourage of adding exercises to this program, as it will overtax the body and hinder progress during the program. 
 
 <h2> The Application </h2> 
+
+<p align="center">
+  <img src="https://github.com/PJ-VDB/SS_Fitness_Tracker/blob/master/sc-1.png" width="200"/>
+  <img src="https://github.com/PJ-VDB/SS_Fitness_Tracker/blob/master/sc-2.png" width="200"/>
+  <img src="https://github.com/PJ-VDB/SS_Fitness_Tracker/blob/master/sc-3.png" width="200"/>
+  <img src="https://github.com/PJ-VDB/SS_Fitness_Tracker/blob/master/sc-4.png" width="200"/>
+</p>
 
 The Starting Strenght Fitness Tracker allows you to pick a date (the date of your workout say). You can then <b>add Workout A or Workout B</b> by clicking on the + in the lower-right corner. Exercises can be <b>removed by swiping</b> them away to the left. One field (the right one) in the exercise bar is clickable, this is where you are supposed to add your weight for this workout. The number next to it gives you the recommended Sets and Repetitions (S x R). When you are then using your Fitness Tracker on the second day, it will automatically show the weight of your previous workout, this allows for easy tracking and keeps you motivated!
 
