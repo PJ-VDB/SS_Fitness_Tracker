@@ -42,3 +42,10 @@ The Starting Strenght Fitness Tracker allows you to pick a date (the date of you
 Because going on your phone during a workout can be distracting, I have added an <b>in-app timer functionality</b>, this means that you can time your rests within the app. The timer will keep running when the phone is on standby, the <b>icon of the timer on the stand-by screen</b> is clickable to return to the app. 
 
 Furthermore, for you non metric fella's, there is the option to <b>switch to the non-metric system</b>. And finally, if you are extremely excited to <b>share your improvements with your friends</b>, you can send your workout results through various messaging apps to your friends. 
+
+<h2> Instructions </h2>
+
+If you read through all of this, thank you and good luck with your workout! 
+The app will maybe be added to the Google Play Store in the future, until then you can install it through the use of Android Studio.
+
+Feel free to tinker with the app yourself, I have used some libraries/concepts such as SQLDelite (SQLite), AutoValue, cursors, ...
