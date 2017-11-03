@@ -1,5 +1,9 @@
 <h1> Starting Strength Fitness Tracker </h1>
 
+<p align="center">
+  <img src="https://github.com/PJ-VDB/SS_Fitness_Tracker/blob/master/app-banner.png" width="800"/>
+</p>
+
 <h2> The Program </h2>
 
 I made this application to check my progress while following <a href="http://www.muscleandfitness.com/workouts/workout-routines/4-week-guide-starting-strength" target="_blank"> Mark Rippetoe's Starting Strength program</a>
