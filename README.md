@@ -1,7 +1,7 @@
 <h1> Starting Strength Fitness Tracker </h1>
 
 <p align="center">
-  <img src="https://github.com/PJ-VDB/SS_Fitness_Tracker/blob/master/app-banner.png" width="800"/>
+  <img src="https://github.com/PJ-VDB/SS_Fitness_Tracker/blob/master/app-banner-jpeg.jpg" width="800"/>
 </p>
 
 <h2> The Program </h2>
